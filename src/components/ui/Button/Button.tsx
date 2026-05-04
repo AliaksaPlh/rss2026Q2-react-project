@@ -2,7 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 
 interface ButtonProps {
-  variant?: 'primary' | 'success' | 'secondary';
+  variant?: 'primary' | 'success' | 'secondary' | 'outline' | 'ghost';
   type?: 'button' | 'submit' | 'reset';
   className?: string;
   onClick?: () => void;
@@ -24,11 +24,20 @@ const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       className={clsx(
-        'px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400',
+        'disabled:pointer-events-none disabled:opacity-45',
         {
-          'bg-blue-600 text-white hover:bg-blue-700': variant === 'primary',
-          'bg-green-600 text-white hover:bg-green-700': variant === 'success',
-          'bg-gray-500 text-white hover:bg-gray-600': variant === 'secondary',
+          'bg-gradient-to-r from-rose-600 to-orange-500 text-white shadow-lg shadow-rose-900/35 hover:from-rose-500 hover:to-orange-400 hover:shadow-glow active:scale-[0.98]':
+            variant === 'primary',
+          'bg-emerald-600 text-white shadow-md shadow-emerald-900/30 hover:bg-emerald-500 active:scale-[0.98]':
+            variant === 'success',
+          'bg-slate-700 text-slate-100 shadow-md hover:bg-slate-600 active:scale-[0.98]':
+            variant === 'secondary',
+          'border border-slate-600 bg-slate-900/60 text-slate-200 backdrop-blur-sm hover:border-slate-500 hover:bg-slate-800/80 active:scale-[0.98]':
+            variant === 'outline',
+          'border border-transparent bg-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-200':
+            variant === 'ghost',
         },
         className
       )}

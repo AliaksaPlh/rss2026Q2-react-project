@@ -12,12 +12,27 @@ export function SearchBar(props: Props) {
   const { value, onChange, onSearch } = props;
 
   return (
-    <div className="flex items-center gap-2 mb-5">
-      <Input value={value} onChange={onChange} placeholder="Enter params..." />
-
-      <Button onClick={onSearch} variant="primary">
-        Search
-      </Button>
+    <div className="w-full max-w-2xl">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <div className="min-w-0 flex-1">
+          <Input
+            value={value}
+            onChange={onChange}
+            placeholder="Search Pokémon by number or by Full name (e.g. pikachu, 25)…"
+          />
+        </div>
+        <Button
+          type="button"
+          onClick={onSearch}
+          variant="primary"
+          className="shrink-0 sm:min-w-[7.5rem]"
+        >
+          Search
+        </Button>
+      </div>
+      <p className="mt-2 text-left text-xs text-slate-500">
+        Clear the field and search again.
+      </p>
     </div>
   );
 }
