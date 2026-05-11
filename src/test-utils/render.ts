@@ -1,0 +1,4 @@
+import { render } from '@testing-library/react';
+
+export { render };
+export * from '@testing-library/react';
