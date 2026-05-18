@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { fetchPokemonByName, fetchPokemonsPage } from '../../api/pokemonApi';
 import { SearchBar } from '../SearchBar/SearchBar';
@@ -7,65 +7,106 @@ import type { Pokemon } from '../../types/pokemonTypes';
 import ErrorBoundaryButton from '../ErrorBoundary/ErrorBoundaryButton';
 import Pagination from '../Pagination/Pagination';
 
-type State = {
-  term: string;
-  loading: boolean;
-  error: string | null;
-  currentPokemon: Pokemon | null;
-  allPokemons: Pokemon[];
-  currentPage: number;
-};
+export function PokemonContainer() {
+  const [term, setTerm] = useState(
+    () => localStorage.getItem('searchTerm') || ''
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPokemon, setCurrentPokemon] = useState<Pokemon | null>(null);
+  const [allPokemons, setAllPokemons] = useState<Pokemon[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
-export class PokemonContainer extends Component<Record<string, never>, State> {
-  constructor(props: Record<string, never>) {
-    super(props);
-    this.state = {
-      term: '',
-      loading: false,
-      error: null,
-      currentPokemon: null,
-      allPokemons: [],
-      currentPage: 1,
-    };
-  }
+  const beginFetchReset = useCallback((nextPage?: number) => {
+    setLoading(true);
+    setError(null);
+    setCurrentPokemon(null);
+    setAllPokemons([]);
+    if (nextPage !== undefined) setCurrentPage(nextPage);
+  }, []);
 
-  beginFetchReset = (nextPage?: number) => {
-    const base = {
-      loading: true,
-      error: null,
-      currentPokemon: null,
-      allPokemons: [] as Pokemon[],
-    };
-    if (nextPage !== undefined) {
-      this.setState({ ...base, currentPage: nextPage });
-    } else {
-      this.setState(base);
-    }
-  };
-
-  failFetch = (error: unknown) => {
+  const failFetch = useCallback((error: unknown) => {
     const message =
       error instanceof Error ? error.message : 'Unknown error occurred';
-    this.setState({ error: message, loading: false });
-  };
+    setError(message);
+    setLoading(false);
+  }, []);
 
-  componentDidMount() {
-    const savedTerm = localStorage.getItem('searchTerm') || '';
-    this.setState({ term: savedTerm }, () => {
-      if (savedTerm.trim()) {
-        this.loadPokemonByName(savedTerm.trim());
-      } else {
-        this.loadPokemonList();
+  const loadPokemonByName = useCallback(
+    async (name: string) => {
+      beginFetchReset();
+
+      try {
+        const data = await fetchPokemonByName(name);
+        setCurrentPokemon(data);
+        setLoading(false);
+      } catch (error: unknown) {
+        failFetch(error);
       }
-    });
-  }
+    },
+    [beginFetchReset, failFetch]
+  );
 
-  handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ term: e.target.value });
+  const loadPokemonList = useCallback(
+    async (page: number = 1) => {
+      beginFetchReset(page);
+
+      try {
+        const pokemons = await fetchPokemonsPage(page);
+        setAllPokemons(pokemons);
+        setLoading(false);
+      } catch (error: unknown) {
+        failFetch(error);
+      }
+    },
+    [beginFetchReset, failFetch]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialData() {
+      const savedTerm = localStorage.getItem('searchTerm') || '';
+      const trimmed = savedTerm.trim();
+
+      try {
+        if (trimmed) {
+          const data = await fetchPokemonByName(trimmed);
+
+          if (!cancelled) {
+            setCurrentPokemon(data);
+          }
+        } else {
+          const pokemons = await fetchPokemonsPage(1);
+
+          if (!cancelled) {
+            setAllPokemons(pokemons);
+          }
+        }
+      } catch (error: unknown) {
+        if (!cancelled) {
+          failFetch(error);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadInitialData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [failFetch]);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setTerm(e.target.value);
   };
 
-  handleSearch = () => {
-    const trimmed = this.state.term.trim().toLowerCase();
+  const handleSearch = () => {
+    const trimmed = term.trim().toLowerCase();
     const persisted = localStorage.getItem('searchTerm') ?? '';
     if (trimmed === persisted) {
       return;
@@ -73,71 +114,42 @@ export class PokemonContainer extends Component<Record<string, never>, State> {
     localStorage.setItem('searchTerm', trimmed);
 
     if (trimmed === '') {
-      this.loadPokemonList();
+      loadPokemonList();
     } else {
-      this.loadPokemonByName(trimmed);
+      loadPokemonByName(trimmed);
     }
   };
 
-  handlePageChange = (newPage: number) => {
-    this.loadPokemonList(newPage);
+  const handlePageChange = (newPage: number) => {
+    loadPokemonList(newPage);
   };
 
-  loadPokemonByName = async (name: string) => {
-    this.beginFetchReset();
-
-    try {
-      const data = await fetchPokemonByName(name);
-      this.setState({ currentPokemon: data, loading: false });
-    } catch (error: unknown) {
-      this.failFetch(error);
-    }
-  };
-
-  loadPokemonList = async (page: number = 1) => {
-    this.beginFetchReset(page);
-
-    try {
-      const pokemons = await fetchPokemonsPage(page);
-      this.setState({ allPokemons: pokemons, loading: false });
-    } catch (error: unknown) {
-      this.failFetch(error);
-    }
-  };
-
-  render() {
-    const { term, loading, error, currentPokemon, allPokemons } = this.state;
-
-    return (
-      <div className="flex w-full flex-col items-stretch gap-10">
-        <section className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 shadow-card backdrop-blur-md sm:p-6">
-          <SearchBar
-            value={term}
-            onChange={this.handleChange}
-            onSearch={this.handleSearch}
-          />
-        </section>
-
-        <PokemonResults
-          loading={loading}
-          error={error}
-          currentPokemon={currentPokemon}
-          allPokemons={allPokemons}
+  return (
+    <div className="flex w-full flex-col items-stretch gap-10">
+      <section className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 shadow-card backdrop-blur-md sm:p-6">
+        <SearchBar
+          value={term}
+          onChange={handleChange}
+          onSearch={handleSearch}
         />
+      </section>
 
-        {!currentPokemon && allPokemons.length > 0 && (
-          <Pagination
-            currentPage={this.state.currentPage}
-            onPageChange={this.handlePageChange}
-          />
-        )}
+      <PokemonResults
+        loading={loading}
+        error={error}
+        currentPokemon={currentPokemon}
+        allPokemons={allPokemons}
+      />
 
-        <div className="flex justify-center border-t border-slate-800/80 pt-8">
-          <ErrorBoundaryButton />
-        </div>
+      {!currentPokemon && allPokemons.length > 0 && (
+        <Pagination currentPage={currentPage} onPageChange={handlePageChange} />
+      )}
+
+      <div className="flex justify-center border-t border-slate-800/80 pt-8">
+        <ErrorBoundaryButton />
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 export default PokemonContainer;
