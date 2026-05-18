@@ -3,6 +3,7 @@ import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { MovieDetailsPanel } from './components/MovieSearchBarResults/MovieDetailsPanel';
 import AboutMePage from './components/AboutMe/AboutMe';
+import NotFoundPage from './components/NotFoundPage/NotFoundPage';
 
 const App = () => {
   return (
@@ -35,11 +36,8 @@ const App = () => {
             <Route path="/movies" element={<MovieContainer />}>
               <Route index element={<MovieDetailsPanel />} />
             </Route>{' '}
-            <Route
-              path="*"
-              element={<p className="text-white">Page not found</p>}
-            />
             <Route path="/about" element={<AboutMePage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>{' '}
         </ErrorBoundary>
       </main>
