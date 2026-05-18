@@ -19,7 +19,8 @@ export function MovieListItem({ movie }: Props) {
           </strong>
 
           <p className="line-clamp-5 text-base leading-7 text-slate-300">
-            {movie.overview}
+            {movie.original_language.toUpperCase()} | {movie.release_date} |
+            Popularity: {movie.popularity}
           </p>
 
           <span className="mt-6 text-sm text-slate-400">

@@ -26,6 +26,12 @@ export function MovieDetailCard({ movie }: Props) {
         <p className="text-center text-slate-400">{movie.overview}</p>
         <p className="text-center text-slate-400">{movie.release_date}</p>
         <p className="text-center text-slate-400">{movie.vote_average}</p>
+        <p className="text-center text-slate-400">
+          Popularity: {movie.popularity}
+        </p>
+        <p className="text-center text-slate-400">
+          Language: {movie.original_language.toUpperCase()}
+        </p>
       </div>
     </article>
   );

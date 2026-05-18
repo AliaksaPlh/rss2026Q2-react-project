@@ -46,6 +46,7 @@ async function fetchMovies(url: string, query?: string): Promise<Movie[]> {
   }
 
   const data = (await response.json()) as MoviesResponse;
+
   return data.results.slice(0, MOVIES_PER_PAGE).map(addPosterUrl);
 }
 

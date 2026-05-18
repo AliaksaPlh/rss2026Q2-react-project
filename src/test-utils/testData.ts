@@ -70,6 +70,8 @@ export const createMovieMock = (overrides: Partial<Movie> = {}): Movie => ({
   release_date: '2005-06-15',
   vote_average: 8.2,
   posterUrl: 'https://image.tmdb.org/t/p/w500/batman.jpg',
+  original_language: 'en',
+  popularity: 123.45,
   ...overrides,
 });
 
@@ -84,6 +86,8 @@ export const supermanMock = createMovieMock({
   release_date: '1978-12-15',
   vote_average: 7.1,
   posterUrl: 'https://image.tmdb.org/t/p/w500/superman.jpg',
+  original_language: 'en',
+  popularity: 98.76,
 });
 
 export const duneMock = createMovieMock({
@@ -95,4 +99,6 @@ export const duneMock = createMovieMock({
   release_date: '2021-10-22',
   vote_average: 7.8,
   posterUrl: 'https://image.tmdb.org/t/p/w500/dune.jpg',
+  original_language: 'en',
+  popularity: 87.65,
 });
