@@ -6,7 +6,7 @@ import {
   squirtleMock,
 } from '../../test-utils/testData';
 import { fireEvent, render, screen } from '../../test-utils/render';
-import PokemonContainer from './PokemonContainer';
+import PokemonContainer from './MovieContainer';
 
 vi.mock('../../api/pokemonApi', () => ({
   fetchPokemonByName: vi.fn(),

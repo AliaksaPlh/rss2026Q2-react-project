@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchPokemonByName, fetchPokemonsPage } from '../../api/pokemonApi';
 import { charmanderMock, pikachuMock } from '../../test-utils/testData';
 import { fireEvent, render, screen, waitFor } from '../../test-utils/render';
-import PokemonContainer from './PokemonContainer';
+import PokemonContainer from './MovieContainer';
 
 vi.mock('../../api/pokemonApi', () => ({
   fetchPokemonByName: vi.fn(),

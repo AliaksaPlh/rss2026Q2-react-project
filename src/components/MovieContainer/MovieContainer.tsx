@@ -1,28 +1,28 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { fetchPokemonByName, fetchPokemonsPage } from '../../api/pokemonApi';
 import { SearchBar } from '../SearchBar/SearchBar';
-import PokemonResults from '../PokemonSearchBarResults/PokemonResults';
-import type { Pokemon } from '../../types/pokemonTypes';
+import MovieResults from '../MovieSearchBarResults/MovieResults';
 import ErrorBoundaryButton from '../ErrorBoundary/ErrorBoundaryButton';
 import Pagination from '../Pagination/Pagination';
+import { searchMoviesByTitle } from '../../api/movieApi';
+import type { Movie } from '../../types/movieTypes';
 
-export function PokemonContainer() {
+export function MovieContainer() {
   const [term, setTerm] = useState(
     () => localStorage.getItem('searchTerm') || ''
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPokemon, setCurrentPokemon] = useState<Pokemon | null>(null);
-  const [allPokemons, setAllPokemons] = useState<Pokemon[]>([]);
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
   const beginFetchReset = useCallback((nextPage?: number) => {
     setLoading(true);
     setError(null);
-    setCurrentPokemon(null);
-    setAllPokemons([]);
-    if (nextPage !== undefined) setCurrentPage(nextPage);
+    setAllMovies([]);
+    if (nextPage !== undefined) {
+      setCurrentPage(nextPage);
+    }
   }, []);
 
   const failFetch = useCallback((error: unknown) => {
@@ -32,28 +32,13 @@ export function PokemonContainer() {
     setLoading(false);
   }, []);
 
-  const loadPokemonByName = useCallback(
-    async (name: string) => {
-      beginFetchReset();
-
-      try {
-        const data = await fetchPokemonByName(name);
-        setCurrentPokemon(data);
-        setLoading(false);
-      } catch (error: unknown) {
-        failFetch(error);
-      }
-    },
-    [beginFetchReset, failFetch]
-  );
-
-  const loadPokemonList = useCallback(
-    async (page: number = 1) => {
+  const loadMovies = useCallback(
+    async (query: string, page = 1) => {
       beginFetchReset(page);
 
       try {
-        const pokemons = await fetchPokemonsPage(page);
-        setAllPokemons(pokemons);
+        const movies = await searchMoviesByTitle(query, page);
+        setAllMovies(movies);
         setLoading(false);
       } catch (error: unknown) {
         failFetch(error);
@@ -70,18 +55,11 @@ export function PokemonContainer() {
       const trimmed = savedTerm.trim();
 
       try {
-        if (trimmed) {
-          const data = await fetchPokemonByName(trimmed);
+        const movies = await searchMoviesByTitle(trimmed, 1);
 
-          if (!cancelled) {
-            setCurrentPokemon(data);
-          }
-        } else {
-          const pokemons = await fetchPokemonsPage(1);
-
-          if (!cancelled) {
-            setAllPokemons(pokemons);
-          }
+        if (!cancelled) {
+          setAllMovies(movies);
+          setCurrentPage(1);
         }
       } catch (error: unknown) {
         if (!cancelled) {
@@ -112,16 +90,11 @@ export function PokemonContainer() {
       return;
     }
     localStorage.setItem('searchTerm', trimmed);
-
-    if (trimmed === '') {
-      loadPokemonList();
-    } else {
-      loadPokemonByName(trimmed);
-    }
+    loadMovies(trimmed, 1);
   };
 
   const handlePageChange = (newPage: number) => {
-    loadPokemonList(newPage);
+    loadMovies(term.trim().toLowerCase(), newPage);
   };
 
   return (
@@ -134,14 +107,14 @@ export function PokemonContainer() {
         />
       </section>
 
-      <PokemonResults
+      <MovieResults
         loading={loading}
         error={error}
-        currentPokemon={currentPokemon}
-        allPokemons={allPokemons}
+        currentMovie={null}
+        allMovies={allMovies}
       />
 
-      {!currentPokemon && allPokemons.length > 0 && (
+      {!loading && !error && allMovies.length > 0 && (
         <Pagination currentPage={currentPage} onPageChange={handlePageChange} />
       )}
 
@@ -152,4 +125,4 @@ export function PokemonContainer() {
   );
 }
 
-export default PokemonContainer;
+export default MovieContainer;

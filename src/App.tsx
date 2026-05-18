@@ -1,4 +1,4 @@
-import { PokemonContainer } from './components/PokemonContainer/PokemonContainer';
+import { MovieContainer } from './components/MovieContainer/MovieContainer';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 
 const App = () => {
@@ -19,7 +19,7 @@ const App = () => {
 
       <main className="relative z-10 mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
         <ErrorBoundary>
-          <PokemonContainer />
+          <MovieContainer />
         </ErrorBoundary>
       </main>
     </section>

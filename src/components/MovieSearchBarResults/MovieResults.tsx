@@ -1,32 +1,32 @@
 import React from 'react';
-import type { Pokemon } from '../../types/pokemonTypes';
 import Loader from '../Loader/Loader';
-import { PokemonDetailCard } from './PokemonDetailCard';
-import { PokemonList } from './PokemonList';
+import { MovieDetailCard } from './MovieDetailCard';
+import { MovieList } from './MovieList';
+import type { Movie } from '../../types/movieTypes';
 
 type Props = {
   loading: boolean;
   error: string | null;
-  currentPokemon: Pokemon | null;
-  allPokemons: Pokemon[];
+  currentMovie: Movie | null;
+  allMovies: Movie[];
 };
 
-const PokemonResults: React.FC<Props> = ({
+const MovieResults: React.FC<Props> = ({
   loading,
   error,
-  currentPokemon,
-  allPokemons,
+  currentMovie,
+  allMovies,
 }) => {
   if (loading) {
     return <Loader />;
   }
 
-  if (currentPokemon) {
-    return <PokemonDetailCard pokemon={currentPokemon} />;
+  if (currentMovie) {
+    return <MovieDetailCard movie={currentMovie} />;
   }
 
-  if (allPokemons.length > 0) {
-    return <PokemonList pokemons={allPokemons} />;
+  if (allMovies.length > 0) {
+    return <MovieList movies={allMovies} />;
   }
 
   if (error) {
@@ -43,4 +43,4 @@ const PokemonResults: React.FC<Props> = ({
   return null;
 };
 
-export default PokemonResults;
+export default MovieResults;
