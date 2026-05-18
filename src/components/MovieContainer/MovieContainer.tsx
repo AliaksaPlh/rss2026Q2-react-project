@@ -6,23 +6,23 @@ import ErrorBoundaryButton from '../ErrorBoundary/ErrorBoundaryButton';
 import Pagination from '../Pagination/Pagination';
 import { searchMoviesByTitle } from '../../api/movieApi';
 import type { Movie } from '../../types/movieTypes';
+import useLocalStorage from '../../hooks/uselocalStorage';
+import { useSearchParams } from 'react-router-dom';
 
 export function MovieContainer() {
-  const [term, setTerm] = useState(
-    () => localStorage.getItem('searchTerm') || ''
-  );
+  const { getLocalStorage, setLocalStorage } = useLocalStorage('searchTerm');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageFromUrl = Number(searchParams.get('page')) || 1;
+  const currentPage = pageFromUrl > 0 ? pageFromUrl : 1;
+  const [term, setTerm] = useState(() => getLocalStorage());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allMovies, setAllMovies] = useState<Movie[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const beginFetchReset = useCallback((nextPage?: number) => {
+  const beginFetchReset = useCallback(() => {
     setLoading(true);
     setError(null);
     setAllMovies([]);
-    if (nextPage !== undefined) {
-      setCurrentPage(nextPage);
-    }
   }, []);
 
   const failFetch = useCallback((error: unknown) => {
@@ -34,7 +34,7 @@ export function MovieContainer() {
 
   const loadMovies = useCallback(
     async (query: string, page = 1) => {
-      beginFetchReset(page);
+      beginFetchReset();
 
       try {
         const movies = await searchMoviesByTitle(query, page);
@@ -51,15 +51,14 @@ export function MovieContainer() {
     let cancelled = false;
 
     async function loadInitialData() {
-      const savedTerm = localStorage.getItem('searchTerm') || '';
+      const savedTerm = getLocalStorage();
       const trimmed = savedTerm.trim();
 
       try {
-        const movies = await searchMoviesByTitle(trimmed, 1);
+        const movies = await searchMoviesByTitle(trimmed, currentPage);
 
         if (!cancelled) {
           setAllMovies(movies);
-          setCurrentPage(1);
         }
       } catch (error: unknown) {
         if (!cancelled) {
@@ -77,7 +76,7 @@ export function MovieContainer() {
     return () => {
       cancelled = true;
     };
-  }, [failFetch]);
+  }, [currentPage, failFetch, getLocalStorage]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTerm(e.target.value);
@@ -85,16 +84,20 @@ export function MovieContainer() {
 
   const handleSearch = () => {
     const trimmed = term.trim().toLowerCase();
-    const persisted = localStorage.getItem('searchTerm') ?? '';
-    if (trimmed === persisted) {
+    const persisted = getLocalStorage();
+    if (trimmed === persisted && currentPage === 1) {
       return;
     }
-    localStorage.setItem('searchTerm', trimmed);
-    loadMovies(trimmed, 1);
+    setLocalStorage(trimmed);
+    if (currentPage === 1) {
+      loadMovies(trimmed, 1);
+    } else {
+      setSearchParams({ page: '1' });
+    }
   };
 
   const handlePageChange = (newPage: number) => {
-    loadMovies(term.trim().toLowerCase(), newPage);
+    setSearchParams({ page: String(newPage) });
   };
 
   return (

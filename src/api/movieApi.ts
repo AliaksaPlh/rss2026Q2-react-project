@@ -2,7 +2,7 @@ import type { Movie, MoviesResponse } from '../types/movieTypes';
 import { TMDB_IMAGE_BASE_URL } from '../consts';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
-const MOVIES_PER_PAGE = 8;
+const MOVIES_PER_PAGE = 16;
 
 const options = {
   method: 'GET',
