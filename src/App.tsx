@@ -1,7 +1,8 @@
 import { MovieContainer } from './components/MovieContainer/MovieContainer';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { MovieDetailsPanel } from './components/MovieSearchBarResults/MovieDetailsPanel';
+import AboutMePage from './components/AboutMe/AboutMe';
 
 const App = () => {
   return (
@@ -21,6 +22,14 @@ const App = () => {
 
       <main className="relative z-10 mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
         <ErrorBoundary>
+          <nav className="mb-6 flex gap-4 text-sm font-semibold">
+            <Link to="/movies" className="text-slate-200 hover:text-white">
+              Movies
+            </Link>
+            <Link to="/about" className="text-slate-200 hover:text-white">
+              About
+            </Link>
+          </nav>
           <Routes>
             <Route path="/" element={<Navigate to="/movies" replace />} />
             <Route path="/movies" element={<MovieContainer />}>
@@ -30,6 +39,7 @@ const App = () => {
               path="*"
               element={<p className="text-white">Page not found</p>}
             />
+            <Route path="/about" element={<AboutMePage />} />
           </Routes>{' '}
         </ErrorBoundary>
       </main>
