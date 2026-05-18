@@ -1,6 +1,7 @@
 import { MovieContainer } from './components/MovieContainer/MovieContainer';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { MovieDetailsPanel } from './components/MovieSearchBarResults/MovieDetailsPanel';
 
 const App = () => {
   return (
@@ -22,7 +23,9 @@ const App = () => {
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Navigate to="/movies" replace />} />
-            <Route path="/movies" element={<MovieContainer />} />
+            <Route path="/movies" element={<MovieContainer />}>
+              <Route index element={<MovieDetailsPanel />} />
+            </Route>{' '}
             <Route
               path="*"
               element={<p className="text-white">Page not found</p>}

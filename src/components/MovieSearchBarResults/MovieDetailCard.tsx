@@ -23,6 +23,9 @@ export function MovieDetailCard({ movie }: Props) {
         <h2 className="mb-1 text-center text-2xl font-bold capitalize tracking-tight text-white">
           {movie.title}
         </h2>
+        <p className="text-center text-slate-400">{movie.overview}</p>
+        <p className="text-center text-slate-400">{movie.release_date}</p>
+        <p className="text-center text-slate-400">{movie.vote_average}</p>
       </div>
     </article>
   );

@@ -7,7 +7,7 @@ import Pagination from '../Pagination/Pagination';
 import { searchMoviesByTitle } from '../../api/movieApi';
 import type { Movie } from '../../types/movieTypes';
 import useLocalStorage from '../../hooks/uselocalStorage';
-import { useSearchParams } from 'react-router-dom';
+import { Outlet, useSearchParams } from 'react-router-dom';
 
 export function MovieContainer() {
   const { getLocalStorage, setLocalStorage } = useLocalStorage('searchTerm');
@@ -18,6 +18,7 @@ export function MovieContainer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allMovies, setAllMovies] = useState<Movie[]>([]);
+  const selectedMovieId = searchParams.get('details');
 
   const beginFetchReset = useCallback(() => {
     setLoading(true);
@@ -53,7 +54,9 @@ export function MovieContainer() {
     async function loadInitialData() {
       const savedTerm = getLocalStorage();
       const trimmed = savedTerm.trim();
-
+      setLoading(true);
+      setError(null);
+      setAllMovies([]);
       try {
         const movies = await searchMoviesByTitle(trimmed, currentPage);
 
@@ -95,6 +98,15 @@ export function MovieContainer() {
       setSearchParams({ page: '1' });
     }
   };
+  const closeDetailsPanel = () => {
+    if (!selectedMovieId) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('details');
+    setSearchParams(nextParams);
+  };
 
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: String(newPage) });
@@ -109,18 +121,27 @@ export function MovieContainer() {
           onSearch={handleSearch}
         />
       </section>
+      <div className="relative" onClick={closeDetailsPanel}>
+        <MovieResults
+          loading={loading}
+          error={error}
+          currentMovie={null}
+          allMovies={allMovies}
+        />
 
-      <MovieResults
-        loading={loading}
-        error={error}
-        currentMovie={null}
-        allMovies={allMovies}
-      />
+        {!loading && !error && allMovies.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+          />
+        )}
 
-      {!loading && !error && allMovies.length > 0 && (
-        <Pagination currentPage={currentPage} onPageChange={handlePageChange} />
-      )}
-
+        {selectedMovieId && (
+          <aside className="fixed right-4 top-24 z-50 max-h-[calc(100vh-7rem)] w-[24rem] overflow-y-auto rounded-2xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-md">
+            <Outlet />
+          </aside>
+        )}
+      </div>
       <div className="flex justify-center border-t border-slate-800/80 pt-8">
         <ErrorBoundaryButton />
       </div>

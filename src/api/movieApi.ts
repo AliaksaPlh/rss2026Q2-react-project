@@ -70,3 +70,17 @@ export async function searchMoviesByTitle(
     query
   );
 }
+
+export async function fetchMovieById(id: string): Promise<Movie> {
+  const response = await fetch(
+    `${BASE_URL}/movie/${encodeURIComponent(id)}?language=en-US`,
+    options
+  );
+
+  if (!response.ok) {
+    handleMovieResponseError(response);
+  }
+
+  const movie = (await response.json()) as Movie;
+  return addPosterUrl(movie);
+}
