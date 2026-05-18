@@ -4,3 +4,5 @@ Welcom to my repository, wich represents my process of learning React and relate
 Here you can find different branches - every branch is a new step and new task I've complete
 
 All task are from Rolling Scopes Schoole, React course
+
+## Copy .env.example to .env in order to get access to the API
