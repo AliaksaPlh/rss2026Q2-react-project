@@ -1,124 +1,133 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchPokemonByName, fetchPokemonsPage } from '../../api/pokemonApi';
-import { charmanderMock, pikachuMock } from '../../test-utils/testData';
+import { MemoryRouter } from 'react-router-dom';
+import { searchMoviesByTitle } from '../../api/movieApi';
+import { batmanMock, supermanMock } from '../../test-utils/testData';
 import { fireEvent, render, screen, waitFor } from '../../test-utils/render';
-import PokemonContainer from './MovieContainer';
+import MovieContainer from './MovieContainer';
 
-vi.mock('../../api/pokemonApi', () => ({
-  fetchPokemonByName: vi.fn(),
-  fetchPokemonsPage: vi.fn(),
+vi.mock('../../api/movieApi', () => ({
+  searchMoviesByTitle: vi.fn(),
+  fetchMovieById: vi.fn(),
 }));
 
-const mockedFetchPokemonByName = vi.mocked(fetchPokemonByName);
-const mockedFetchPokemonsPage = vi.mocked(fetchPokemonsPage);
+const mockedSearchMoviesByTitle = vi.mocked(searchMoviesByTitle);
 
-describe('PokemonContainer', () => {
+function renderMovieContainer(initialEntry = '/movies?page=1') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <MovieContainer />
+    </MemoryRouter>
+  );
+}
+
+describe('MovieContainer', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     localStorage.clear();
   });
 
-  it('shows loading indicator while pokemon list is loading', async () => {
-    let resolveRequest: (value: (typeof pikachuMock)[]) => void;
+  it('shows loading indicator while movies are loading', async () => {
+    let resolveRequest: (value: typeof batmanMock[]) => void;
 
-    mockedFetchPokemonsPage.mockReturnValue(
+    mockedSearchMoviesByTitle.mockReturnValue(
       new Promise((resolve) => {
         resolveRequest = resolve;
       })
     );
-    render(<PokemonContainer />);
+    renderMovieContainer();
+
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
-    resolveRequest!([pikachuMock]);
-    expect(await screen.findByText(/pikachu/i)).toBeInTheDocument();
+
+    resolveRequest!([batmanMock]);
+
+    expect(await screen.findByText(/batman begins/i)).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
-  it('loads and displays a pokemon list on initial render', async () => {
-    mockedFetchPokemonsPage.mockResolvedValue([pikachuMock, charmanderMock]);
+  it('loads and displays a movie list on initial render', async () => {
+    mockedSearchMoviesByTitle.mockResolvedValue([batmanMock, supermanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
     expect(
-      await screen.findByRole('heading', { name: /pokémon on this page/i })
+      await screen.findByRole('heading', { name: /movies/i })
     ).toBeInTheDocument();
-    expect(screen.getByText('2 found.')).toBeInTheDocument();
-    expect(screen.getByText(/pikachu/i)).toBeInTheDocument();
-    expect(screen.getByText(/charmander/i)).toBeInTheDocument();
+    expect(screen.getByText('Batman Begins')).toBeInTheDocument();
+    expect(screen.getByText('Superman')).toBeInTheDocument();
     expect(
       screen.getByRole('navigation', { name: /pagination/i })
     ).toBeInTheDocument();
-    expect(mockedFetchPokemonsPage).toHaveBeenCalledWith(1);
+    expect(mockedSearchMoviesByTitle).toHaveBeenCalledWith('', 1);
   });
 
   it('updates input value when user types', async () => {
-    mockedFetchPokemonsPage.mockResolvedValue([charmanderMock]);
-    render(<PokemonContainer />);
-    await screen.findByText(/charmander/i);
-    const input = screen.getByPlaceholderText(/search pokémon/i);
+    mockedSearchMoviesByTitle.mockResolvedValue([supermanMock]);
+    renderMovieContainer();
+
+    await screen.findByText('Superman');
+    const input = screen.getByPlaceholderText(/search movie/i);
 
     fireEvent.change(input, {
-      target: { value: 'pikachu' },
+      target: { value: 'batman' },
     });
-    expect(input).toHaveValue('pikachu');
+
+    expect(input).toHaveValue('batman');
   });
 
-  it('searches by name and displays the matching pokemon', async () => {
-    mockedFetchPokemonsPage.mockResolvedValue([charmanderMock]);
-    mockedFetchPokemonByName.mockResolvedValue(pikachuMock);
+  it('searches by title and displays matching movies', async () => {
+    mockedSearchMoviesByTitle
+      .mockResolvedValueOnce([supermanMock])
+      .mockResolvedValueOnce([batmanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    await screen.findByText(/charmander/i);
+    await screen.findByText('Superman');
 
-    fireEvent.change(screen.getByPlaceholderText(/search pokémon/i), {
-      target: { value: 'Pikachu' },
+    fireEvent.change(screen.getByPlaceholderText(/search movie/i), {
+      target: { value: 'Batman' },
     });
     fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
-    expect(
-      await screen.findByRole('heading', { name: /pikachu/i })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/electric/i)).toBeInTheDocument();
-    expect(mockedFetchPokemonByName).toHaveBeenCalledWith('pikachu');
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    expect(mockedSearchMoviesByTitle).toHaveBeenLastCalledWith('batman', 1);
   });
 
-  it('shows empty input and loads pokemon list when no saved term exists', async () => {
-    mockedFetchPokemonsPage.mockResolvedValue([pikachuMock]);
+  it('shows empty input and loads trending movies when no saved term exists', async () => {
+    mockedSearchMoviesByTitle.mockResolvedValue([batmanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    expect(await screen.findByText(/pikachu/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/search pokémon/i)).toHaveValue('');
-    expect(mockedFetchPokemonsPage).toHaveBeenCalledWith(1);
-    expect(mockedFetchPokemonByName).not.toHaveBeenCalled();
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/search movie/i)).toHaveValue('');
+    expect(mockedSearchMoviesByTitle).toHaveBeenCalledWith('', 1);
   });
 
   it('shows an error message when the API request fails', async () => {
-    mockedFetchPokemonsPage.mockRejectedValue(
-      new Error('Failed to fetch list')
+    mockedSearchMoviesByTitle.mockRejectedValue(
+      new Error('Failed to fetch movies')
     );
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      /failed to fetch list/i
+      /failed to fetch movies/i
     );
   });
 
   it('loads the next page when the user clicks Next', async () => {
-    mockedFetchPokemonsPage
-      .mockResolvedValueOnce([pikachuMock])
-      .mockResolvedValueOnce([charmanderMock]);
+    mockedSearchMoviesByTitle
+      .mockResolvedValueOnce([batmanMock])
+      .mockResolvedValueOnce([supermanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    await screen.findByText(/pikachu/i);
+    await screen.findByText('Batman Begins');
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
 
     await waitFor(() => {
-      expect(mockedFetchPokemonsPage).toHaveBeenLastCalledWith(2);
+      expect(mockedSearchMoviesByTitle).toHaveBeenLastCalledWith('', 2);
     });
-    expect(await screen.findByText(/charmander/i)).toBeInTheDocument();
+    expect(await screen.findByText('Superman')).toBeInTheDocument();
   });
 });

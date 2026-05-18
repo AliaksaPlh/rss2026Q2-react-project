@@ -1,119 +1,114 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchPokemonByName, fetchPokemonsPage } from '../../api/pokemonApi';
-import {
-  charmanderMock,
-  pikachuMock,
-  squirtleMock,
-} from '../../test-utils/testData';
+import { MemoryRouter } from 'react-router-dom';
+import { searchMoviesByTitle } from '../../api/movieApi';
+import { batmanMock, duneMock, supermanMock } from '../../test-utils/testData';
 import { fireEvent, render, screen } from '../../test-utils/render';
-import PokemonContainer from './MovieContainer';
+import MovieContainer from './MovieContainer';
 
-vi.mock('../../api/pokemonApi', () => ({
-  fetchPokemonByName: vi.fn(),
-  fetchPokemonsPage: vi.fn(),
+vi.mock('../../api/movieApi', () => ({
+  searchMoviesByTitle: vi.fn(),
+  fetchMovieById: vi.fn(),
 }));
 
-const mockedFetchPokemonByName = vi.mocked(fetchPokemonByName);
-const mockedFetchPokemonsPage = vi.mocked(fetchPokemonsPage);
+const mockedSearchMoviesByTitle = vi.mocked(searchMoviesByTitle);
 
-describe('PokemonContainer', () => {
+function renderMovieContainer(initialEntry = '/movies?page=1') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <MovieContainer />
+    </MemoryRouter>
+  );
+}
+
+describe('MovieContainer localStorage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     localStorage.clear();
   });
 
   it('saves trimmed lowercase search term to localStorage after search', async () => {
-    mockedFetchPokemonsPage.mockResolvedValue([charmanderMock]);
-    mockedFetchPokemonByName.mockResolvedValue(pikachuMock);
+    mockedSearchMoviesByTitle
+      .mockResolvedValueOnce([supermanMock])
+      .mockResolvedValueOnce([batmanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    await screen.findByText(/charmander/i);
+    await screen.findByText('Superman');
 
-    fireEvent.change(screen.getByPlaceholderText(/search pokémon/i), {
-      target: { value: '  PIKACHU  ' },
+    fireEvent.change(screen.getByPlaceholderText(/search movie/i), {
+      target: { value: '  BATMAN  ' },
     });
 
     fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
-    expect(localStorage.getItem('searchTerm')).toBe('pikachu');
-    expect(
-      await screen.findByRole('heading', { name: /pikachu/i })
-    ).toBeInTheDocument();
-    expect(mockedFetchPokemonByName).toHaveBeenCalledWith('pikachu');
+    expect(localStorage.getItem('searchTerm')).toBe('batman');
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    expect(mockedSearchMoviesByTitle).toHaveBeenLastCalledWith('batman', 1);
   });
 
   it('loads a saved search term from localStorage', async () => {
-    localStorage.setItem('searchTerm', 'squirtle');
-    mockedFetchPokemonByName.mockResolvedValue(squirtleMock);
+    localStorage.setItem('searchTerm', 'dune');
+    mockedSearchMoviesByTitle.mockResolvedValue([duneMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    expect(
-      await screen.findByRole('heading', { name: /squirtle/i })
-    ).toBeInTheDocument();
-    expect(screen.getByDisplayValue('squirtle')).toBeInTheDocument();
-    expect(mockedFetchPokemonByName).toHaveBeenCalledWith('squirtle');
-    expect(mockedFetchPokemonsPage).not.toHaveBeenCalled();
+    expect(await screen.findByText('Dune')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('dune')).toBeInTheDocument();
+    expect(mockedSearchMoviesByTitle).toHaveBeenCalledWith('dune', 1);
   });
 
   it('does not repeat search when term is already saved in localStorage', async () => {
-    localStorage.setItem('searchTerm', 'pikachu');
-    mockedFetchPokemonByName.mockResolvedValue(pikachuMock);
+    localStorage.setItem('searchTerm', 'batman');
+    mockedSearchMoviesByTitle.mockResolvedValue([batmanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    await screen.findByRole('heading', { name: /pikachu/i });
+    await screen.findByText('Batman Begins');
 
     fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
-    expect(mockedFetchPokemonByName).toHaveBeenCalledTimes(1);
-    expect(localStorage.getItem('searchTerm')).toBe('pikachu');
+    expect(mockedSearchMoviesByTitle).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('searchTerm')).toBe('batman');
   });
 
   it('overwrites existing localStorage value when new search is performed', async () => {
-    localStorage.setItem('searchTerm', 'charmander');
+    localStorage.setItem('searchTerm', 'superman');
 
-    mockedFetchPokemonByName
-      .mockResolvedValueOnce(charmanderMock)
-      .mockResolvedValueOnce(pikachuMock);
+    mockedSearchMoviesByTitle
+      .mockResolvedValueOnce([supermanMock])
+      .mockResolvedValueOnce([batmanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    expect(
-      await screen.findByRole('heading', { name: /charmander/i })
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Superman')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByPlaceholderText(/search pokémon/i), {
-      target: { value: 'pikachu' },
+    fireEvent.change(screen.getByPlaceholderText(/search movie/i), {
+      target: { value: 'batman' },
     });
 
     fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
-    expect(localStorage.getItem('searchTerm')).toBe('pikachu');
-    expect(mockedFetchPokemonByName).toHaveBeenLastCalledWith('pikachu');
-    expect(
-      await screen.findByRole('heading', { name: /pikachu/i })
-    ).toBeInTheDocument();
+    expect(localStorage.getItem('searchTerm')).toBe('batman');
+    expect(mockedSearchMoviesByTitle).toHaveBeenLastCalledWith('batman', 1);
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
   });
 
   it('does not search when input changes but Search is not clicked', async () => {
-    mockedFetchPokemonsPage.mockResolvedValue([charmanderMock]);
-    mockedFetchPokemonByName.mockResolvedValue(pikachuMock);
+    mockedSearchMoviesByTitle.mockResolvedValue([supermanMock]);
 
-    render(<PokemonContainer />);
+    renderMovieContainer();
 
-    await screen.findByText(/charmander/i);
+    await screen.findByText('Superman');
 
-    fireEvent.change(screen.getByPlaceholderText(/search pokémon/i), {
-      target: { value: 'pikachu' },
+    fireEvent.change(screen.getByPlaceholderText(/search movie/i), {
+      target: { value: 'batman' },
     });
 
-    expect(screen.getByDisplayValue('pikachu')).toBeInTheDocument();
-    expect(mockedFetchPokemonByName).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue('batman')).toBeInTheDocument();
+    expect(mockedSearchMoviesByTitle).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem('searchTerm')).toBeNull();
     expect(
-      screen.queryByRole('heading', { name: /pikachu/i })
+      screen.queryByText('Batman Begins')
     ).not.toBeInTheDocument();
   });
 });

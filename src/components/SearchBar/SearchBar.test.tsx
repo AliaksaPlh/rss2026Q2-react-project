@@ -8,8 +8,8 @@ describe('SearchBar', () => {
 
     render(<SearchBar value="" onChange={onChange} onSearch={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/search pokémon/i), {
-      target: { value: 'pikachu' },
+    fireEvent.change(screen.getByPlaceholderText(/search movie/i), {
+      target: { value: 'batman' },
     });
 
     expect(onChange).toHaveBeenCalled();
@@ -19,7 +19,7 @@ describe('SearchBar', () => {
     const onSearch = vi.fn();
 
     render(
-      <SearchBar value="pikachu" onChange={vi.fn()} onSearch={onSearch} />
+      <SearchBar value="batman" onChange={vi.fn()} onSearch={onSearch} />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /search/i }));

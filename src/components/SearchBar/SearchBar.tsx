@@ -18,7 +18,7 @@ export function SearchBar(props: Props) {
           <Input
             value={value}
             onChange={onChange}
-            placeholder="Search Pokémon by number or by Full name (e.g. pikachu, 25)…"
+            placeholder="Search movie by title, or leave empty for trending movies..."
           />
         </div>
         <Button

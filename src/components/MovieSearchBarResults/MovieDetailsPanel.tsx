@@ -4,6 +4,7 @@ import { fetchMovieById } from '../../api/movieApi';
 import type { Movie } from '../../types/movieTypes';
 import Loader from '../Loader/Loader';
 import { MovieDetailCard } from './MovieDetailCard';
+import Button from '../ui/Button/Button';
 
 export function MovieDetailsPanel() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -62,13 +63,9 @@ export function MovieDetailsPanel() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={handleClose}
-        className="mb-4 rounded-lg border border-slate-700 px-3 py-1 text-sm text-slate-200"
-      >
+      <Button onClick={handleClose} className="mb-4">
         Close
-      </button>
+      </Button>
 
       {loading && <Loader />}
 

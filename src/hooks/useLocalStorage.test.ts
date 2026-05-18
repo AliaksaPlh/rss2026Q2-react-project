@@ -16,6 +16,6 @@ describe('useLocalStorage', () => {
     act(() => {
       result.current.setLocalStorage('newValue');
     });
-    expect(localStorage.getItem(key)).toBe(JSON.stringify('newValue'));
+    expect(localStorage.getItem(key)).toBe('newValue');
   });
 });

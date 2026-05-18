@@ -25,13 +25,15 @@ const AboutMePage = () => {
               </p>
 
               <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                Alexandra
+                Aliaksandra
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-                Hello, my name is Alexandra. I am a junior frontend developer
-                focused on React, TypeScript, UI development, and building clean
-                user experiences.
+                Hello, my name is Alex. I’m a Frontend Developer focused on
+                building responsive, performant, and user-friendly web
+                applications using modern JavaScript, TypeScript, React, and
+                Next.js. I am open to new opportunities and collaborations, and
+                I am always eager to learn and grow as a developer.
               </p>
 
               <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">

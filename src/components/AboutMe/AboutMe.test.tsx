@@ -1,35 +1,29 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
-import EboutMePage from './AboutMe';
+import { MemoryRouter } from 'react-router-dom';
+import AboutMePage from './AboutMe';
 
-vi.mock('react-router', async (importActual) => {
-  const actual = (await importActual()) as object;
-  return {
-    ...actual,
-    useNavigate: () => vi.fn(),
-  };
-});
-describe('EboutMePage', () => {
-  it('renders titles, links and button', () => {
+describe('AboutMePage', () => {
+  it('renders author information and links', () => {
     render(
       <MemoryRouter>
-        <EboutMePage />
+        <AboutMePage />
       </MemoryRouter>
     );
+
+    expect(screen.getByText('About Me')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'About Me'
+      'Aliaksandra'
     );
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
-      /Alexandra/i
-    );
-    expect(screen.getByRole('link', { name: /link/i })).toHaveAttribute(
+    expect(screen.getByText('Download CV')).toBeInTheDocument();
+
+    expect(screen.getByRole('link', { name: /github/i })).toHaveAttribute(
       'href',
       'https://github.com/AliaksaPlh'
     );
     expect(
-      screen.getByRole('link', { name: /rss react course/i })
+      screen.getByRole('link', { name: /rs school react course/i })
     ).toHaveAttribute('href', 'https://rs.school/courses/reactjs');
     expect(
       screen.getByRole('link', { name: /back to movies/i })
