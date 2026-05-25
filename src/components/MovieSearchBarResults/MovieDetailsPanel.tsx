@@ -15,11 +15,11 @@ export function MovieDetailsPanel() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!movieId) {
+    if (movieId === null || movieId === '') {
       return;
     }
 
-    const selectedMovieId = movieId;
+    const selectedMovieId: string = movieId;
     let cancelled = false;
 
     async function loadMovieDetails() {

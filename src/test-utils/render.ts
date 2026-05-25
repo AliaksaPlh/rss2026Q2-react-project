@@ -1,20 +1,12 @@
-import { createElement } from 'react';
-import type { ComponentType, ReactElement, ReactNode } from 'react';
+import { createElement, type ReactElement, type ReactNode } from 'react';
 import { render as rtlRender } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import store from '../store/store';
-
-const ReduxStoreProvider = Provider as ComponentType<{
-  store: typeof store;
-  children?: ReactNode;
-}>;
-
-function ReduxProvider({ children }: { children: ReactNode }) {
-  return createElement(ReduxStoreProvider, { store }, children);
-}
+import { TestReduxProvider } from './TestReduxProvider';
 
 function render(ui: ReactElement) {
-  return rtlRender(ui, { wrapper: ReduxProvider });
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(TestReduxProvider, null, children),
+  });
 }
 
 export { render };
