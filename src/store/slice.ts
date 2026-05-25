@@ -18,14 +18,20 @@ const selectedMoviesSlice = createSlice({
         (movie) => movie.id === action.payload.id
       );
 
-      if (!exists) {
-        state.selected.push(action.payload);
+      if (exists) {
+        return state;
       }
+
+      return {
+        ...state,
+        selected: [...state.selected, action.payload],
+      };
     },
     removeSelectedMovie: (state, action: PayloadAction<number>) => {
-      state.selected = state.selected.filter(
-        (movie) => movie.id !== action.payload
-      );
+      return {
+        ...state,
+        selected: state.selected.filter((movie) => movie.id !== action.payload),
+      };
     },
     toggleSelectedMovie: (state, action: PayloadAction<Movie>) => {
       const exists = state.selected.some(
@@ -33,15 +39,24 @@ const selectedMoviesSlice = createSlice({
       );
 
       if (exists) {
-        state.selected = state.selected.filter(
-          (movie) => movie.id !== action.payload.id
-        );
-      } else {
-        state.selected.push(action.payload);
+        return {
+          ...state,
+          selected: state.selected.filter(
+            (movie) => movie.id !== action.payload.id
+          ),
+        };
       }
+
+      return {
+        ...state,
+        selected: [...state.selected, action.payload],
+      };
     },
     clearAllSelectedMovies(state) {
-      state.selected = [];
+      return {
+        ...state,
+        selected: [],
+      };
     },
   },
   selectors: {
