@@ -16,31 +16,6 @@ const SelectedMovieList = () => {
     dispatch(clearAllSelectedMovies());
   };
 
-  const handleDownloadJson = () => {
-    const data = selectedMovies.map((movie) => ({
-      id: movie.id,
-      title: movie.title,
-      overview: movie.overview,
-      release_date: movie.release_date,
-      vote_average: movie.vote_average,
-      original_language: movie.original_language,
-      popularity: movie.popularity,
-      details_url: `${window.location.origin}/movies?details=${movie.id}`,
-    }));
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = `${selectedMovies.length}_items.json`;
-    link.click();
-
-    URL.revokeObjectURL(url);
-  };
-
   const handleDownloadCsv = () => {
     const headers = [
       'id',
@@ -95,9 +70,6 @@ const SelectedMovieList = () => {
           </Button>
           <Button type="button" variant="primary" onClick={handleDownloadCsv}>
             Download CSV
-          </Button>
-          <Button type="button" variant="outline" onClick={handleDownloadJson}>
-            JSON
           </Button>
         </div>
       </div>
