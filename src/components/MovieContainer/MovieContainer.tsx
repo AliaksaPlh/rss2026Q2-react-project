@@ -8,6 +8,7 @@ import { searchMoviesByTitle } from '../../api/movieApi';
 import type { Movie } from '../../types/movieTypes';
 import useLocalStorage from '../../hooks/uselocalStorage';
 import { Outlet, useSearchParams } from 'react-router-dom';
+import SelectedMovieList from '../../store/SelectedMovieList';
 
 export function MovieContainer() {
   const { getLocalStorage, setLocalStorage } = useLocalStorage('searchTerm');
@@ -145,6 +146,7 @@ export function MovieContainer() {
       <div className="flex justify-center border-t border-slate-800/80 pt-8">
         <ErrorBoundaryButton />
       </div>
+      <SelectedMovieList />
     </div>
   );
 }
