@@ -19,6 +19,7 @@ export function MovieDetailsPanel() {
       return;
     }
 
+    const selectedMovieId = movieId;
     let cancelled = false;
 
     async function loadMovieDetails() {
@@ -26,7 +27,7 @@ export function MovieDetailsPanel() {
       setError(null);
 
       try {
-        const data = await fetchMovieById(movieId);
+        const data = await fetchMovieById(selectedMovieId);
 
         if (!cancelled) {
           setMovie(data);
