@@ -8,11 +8,80 @@
   }
 
   body {
-    @apply min-h-screen text-slate-100;
-    @apply bg-slate-950;
+    @apply min-h-screen bg-slate-950 text-slate-100 transition-colors duration-300;
   }
 
   #root {
     @apply min-h-screen;
+  }
+}
+
+@layer components {
+  .light body {
+    @apply bg-amber-50 text-slate-950;
+  }
+
+  .light .bg-slate-950,
+  .light .bg-slate-950\/40,
+  .light .bg-slate-950\/50,
+  .light .bg-slate-950\/60,
+  .light .bg-slate-950\/95 {
+    @apply bg-white/90;
+  }
+
+  .light .bg-slate-900\/30,
+  .light .bg-slate-900\/40,
+  .light .bg-slate-900\/50,
+  .light .bg-slate-900\/60,
+  .light .bg-slate-900\/70,
+  .light .bg-slate-900\/80 {
+    @apply bg-white/80;
+  }
+
+  .light .from-slate-800\/90 {
+    --tw-gradient-from: rgb(255 251 235 / 0.95) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(255 251 235 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .light .to-slate-900\/95 {
+    --tw-gradient-to: rgb(255 255 255 / 0.95) var(--tw-gradient-to-position);
+  }
+
+  .light .border-slate-800\/80,
+  .light .border-slate-800\/90,
+  .light .border-slate-700,
+  .light .border-slate-700\/80 {
+    @apply border-amber-200;
+  }
+
+  .light .text-white,
+  .light .text-slate-100,
+  .light .text-slate-200 {
+    @apply text-slate-950;
+  }
+
+  .light .text-slate-300,
+  .light .text-slate-400 {
+    @apply text-slate-700;
+  }
+
+  .light .text-slate-500 {
+    @apply text-slate-600;
+  }
+
+  .light .text-amber-300,
+  .light .text-amber-200 {
+    @apply text-orange-700;
+  }
+
+  .light input {
+    border-color: rgb(253 230 138);
+    background-color: rgb(255 255 255);
+    color: rgb(15 23 42);
+  }
+
+  .light input::placeholder {
+    color: rgb(100 116 139);
   }
 }

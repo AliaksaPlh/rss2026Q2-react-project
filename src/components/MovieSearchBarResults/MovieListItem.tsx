@@ -1,5 +1,5 @@
 import type { Movie } from '../../types/movieTypes';
-import { TMDB_IMAGE_BASE_URL } from './../../consts';
+import { TMDB_IMAGE_BASE_URL } from '../../consts.ts';
 import { Link, useSearchParams } from 'react-router-dom';
 
 type Props = {

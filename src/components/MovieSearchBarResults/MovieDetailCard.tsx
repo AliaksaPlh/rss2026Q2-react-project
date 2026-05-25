@@ -1,5 +1,5 @@
 import type { Movie } from '../../types/movieTypes';
-import { TMDB_IMAGE_BASE_URL } from '../../consts';
+import { TMDB_IMAGE_BASE_URL } from '../../consts.ts';
 
 type Props = {
   movie: Movie;

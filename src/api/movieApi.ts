@@ -1,5 +1,5 @@
 import type { Movie, MoviesResponse } from '../types/movieTypes';
-import { TMDB_IMAGE_BASE_URL } from '../consts';
+import { TMDB_IMAGE_BASE_URL } from '../consts.ts';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const MOVIES_PER_PAGE = 16;

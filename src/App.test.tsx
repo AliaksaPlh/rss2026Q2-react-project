@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import { searchMoviesByTitle } from './api/movieApi';
 import { batmanMock } from './test-utils/testData';
+import { ThemeProvider } from './Context/ThemeProvider';
 
 vi.mock('./api/movieApi', () => ({
   searchMoviesByTitle: vi.fn(),
@@ -15,9 +16,11 @@ describe('App', () => {
     vi.mocked(searchMoviesByTitle).mockResolvedValue([batmanMock]);
 
     render(
-      <MemoryRouter initialEntries={['/movies?page=1']}>
-        <App />
-      </MemoryRouter>
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/movies?page=1']}>
+          <App />
+        </MemoryRouter>
+      </ThemeProvider>
     );
 
     expect(screen.getByPlaceholderText(/search movie/i)).toBeInTheDocument();
