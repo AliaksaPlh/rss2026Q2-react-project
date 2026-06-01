@@ -6,10 +6,12 @@ type Props = {
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSearch: () => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 };
 
 export function SearchBar(props: Props) {
-  const { value, onChange, onSearch } = props;
+  const { value, onChange, onSearch, onRefresh, refreshing = false } = props;
 
   return (
     <div className="w-full max-w-2xl">
@@ -29,6 +31,11 @@ export function SearchBar(props: Props) {
         >
           Search
         </Button>
+        {onRefresh && (
+          <Button onClick={onRefresh} variant="outline" disabled={refreshing}>
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        )}
       </div>
       <p className="mt-2 text-left text-xs text-slate-500">
         Clear the field and search again.

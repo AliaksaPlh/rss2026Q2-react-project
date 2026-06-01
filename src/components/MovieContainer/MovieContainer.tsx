@@ -2,10 +2,12 @@ import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Outlet, useSearchParams } from 'react-router-dom';
 import {
+  movieApi,
   useGetTrendingMoviesQuery,
   useSearchMoviesQuery,
   getRtkQueryErrorMessage,
 } from '../../api/rtk/movieApi';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
 import useLocalStorage from '../../hooks/uselocalStorage';
 import SelectedMovieList from '../../store/SelectedMovieList';
 import { SearchBar } from '../SearchBar/SearchBar';
@@ -14,6 +16,7 @@ import ErrorBoundaryButton from '../ErrorBoundary/ErrorBoundaryButton';
 import Pagination from '../Pagination/Pagination';
 
 export function MovieContainer() {
+  const dispatch = useAppDispatch();
   const { getLocalStorage, setLocalStorage } = useLocalStorage('searchTerm');
   const [searchParams, setSearchParams] = useSearchParams();
   const pageFromUrl = Number(searchParams.get('page')) || 1;
@@ -35,7 +38,9 @@ export function MovieContainer() {
     { skip: !trimmedQuery }
   );
 
-  const { data, isLoading, isFetching, error } = trimmedQuery ? search : trending;
+  const { data, isLoading, isFetching, error, refetch } = trimmedQuery
+    ? search
+    : trending;
   const loading = isLoading || isFetching;
   const allMovies = loading ? [] : (data ?? []);
   const errorMessage = getRtkQueryErrorMessage(error);
@@ -60,6 +65,17 @@ export function MovieContainer() {
     }
   };
 
+  const handleRefresh = () => {
+    const listTag = trimmedQuery
+      ? `SEARCH:${trimmedQuery}:${currentPage}`
+      : 'TRENDING';
+
+    dispatch(
+      movieApi.util.invalidateTags([{ type: 'MovieList', id: listTag }])
+    );
+    void refetch();
+  };
+
   const closeDetailsPanel = () => {
     if (!selectedMovieId) {
       return;
@@ -81,6 +97,8 @@ export function MovieContainer() {
           value={term}
           onChange={handleChange}
           onSearch={handleSearch}
+          onRefresh={handleRefresh}
+          refreshing={isFetching}
         />
       </section>
       <div className="relative" onClick={closeDetailsPanel}>
