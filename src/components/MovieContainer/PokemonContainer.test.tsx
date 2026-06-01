@@ -61,6 +61,35 @@ describe('MovieContainer', () => {
     ).toBeInTheDocument();
   });
 
+  it('reuses cached movie list data between navigations', async () => {
+    const fetchMock = stubTmdbFetch({ trending: [batmanMock] });
+    const firstRender = renderMovieContainer();
+
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    const callsAfterFirstLoad = fetchMock.mock.calls.length;
+
+    firstRender.unmount();
+    renderMovieContainer();
+
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    expect(fetchMock.mock.calls.length).toBe(callsAfterFirstLoad);
+  });
+
+  it('refreshes movie list data when Refresh is clicked', async () => {
+    const fetchMock = stubTmdbFetch({ trending: [batmanMock] });
+
+    renderMovieContainer();
+
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    const callsAfterFirstLoad = fetchMock.mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: /refresh/i }));
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAfterFirstLoad);
+    });
+  });
+
   it('updates input value when user types', async () => {
     stubTmdbFetch({ trending: [supermanMock] });
     renderMovieContainer();
