@@ -7,6 +7,13 @@ import { TMDB_IMAGE_BASE_URL } from '../../consts';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const MOVIES_PER_PAGE = 16;
 
+/** RTK Query cache TTL (seconds) */
+const rawCacheTtlSeconds = Number(import.meta.env.VITE_RTK_QUERY_CACHE_SECONDS);
+const keepUnusedDataFor =
+  Number.isFinite(rawCacheTtlSeconds) && rawCacheTtlSeconds >= 0
+    ? rawCacheTtlSeconds
+    : 60;
+
 function movieErrorMessage(status: number, query?: string): string {
   if (status === 404 && query) {
     return `Movie "${query}" not found. Status: ${status}`;
@@ -39,12 +46,29 @@ const transformListError = (
   response: FetchBaseQueryError,
   query?: string
 ): string => {
+  if (response.status === 'FETCH_ERROR' && typeof response.error === 'string') {
+    return response.error;
+  }
+  if (
+    response.status === 'PARSING_ERROR' &&
+    typeof response.error === 'string'
+  ) {
+    return response.error;
+  }
   const status = typeof response.status === 'number' ? response.status : 0;
   return movieErrorMessage(status, query);
 };
 
+/**
+ * TMDB via RTK Query: tag-based cache (`Movie`, `MovieList`), TTL from .env, refetch on focus/reconnect
+ * Cache is invalidated on new search and when closing details
+ */
 export const movieApi = createApi({
   reducerPath: 'movieApi',
+  tagTypes: ['Movie', 'MovieList'],
+  keepUnusedDataFor,
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: (headers) => {
@@ -58,6 +82,16 @@ export const movieApi = createApi({
       query: ({ page = 1 }) => `trending/movie/day?language=en-US&page=${page}`,
       transformResponse: transformListResponse,
       transformErrorResponse: (response) => transformListError(response),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((m) => ({
+                type: 'Movie' as const,
+                id: String(m.id),
+              })),
+              { type: 'MovieList' as const, id: 'TRENDING' },
+            ]
+          : [{ type: 'MovieList' as const, id: 'TRENDING' }],
     }),
 
     searchMovies: builder.query<Movie[], { title: string; page?: number }>({
@@ -66,12 +100,25 @@ export const movieApi = createApi({
       transformResponse: transformListResponse,
       transformErrorResponse: (response, _meta, arg) =>
         transformListError(response, arg.title.trim()),
+      providesTags: (result, _error, arg) => {
+        const listId = `SEARCH:${arg.title}:${arg.page ?? 1}`;
+        return result
+          ? [
+              ...result.map((m) => ({
+                type: 'Movie' as const,
+                id: String(m.id),
+              })),
+              { type: 'MovieList' as const, id: listId },
+            ]
+          : [{ type: 'MovieList' as const, id: listId }];
+      },
     }),
 
     getMovieById: builder.query<Movie, string>({
       query: (id) => `movie/${encodeURIComponent(id)}?language=en-US`,
       transformResponse: (movie: Movie) => addPosterUrl(movie),
       transformErrorResponse: (response) => transformListError(response),
+      providesTags: (_result, _error, id) => [{ type: 'Movie', id }],
     }),
   }),
 });
@@ -95,6 +142,13 @@ export function getRtkQueryErrorMessage(
 
   if (typeof error !== 'object') {
     return 'Unknown error occurred';
+  }
+
+  if ('status' in error && error.status === 'FETCH_ERROR' && 'error' in error) {
+    const fetchErr = String((error as { error: string }).error);
+    if (fetchErr) {
+      return fetchErr;
+    }
   }
 
   if ('data' in error && typeof error.data === 'string') {
