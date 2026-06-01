@@ -1,86 +1,49 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { Outlet, useSearchParams } from 'react-router-dom';
+import {
+  movieApi,
+  useGetTrendingMoviesQuery,
+  useSearchMoviesQuery,
+  getRtkQueryErrorMessage,
+} from '../../api/rtk/movieApi';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import useLocalStorage from '../../hooks/uselocalStorage';
+import SelectedMovieList from '../../store/SelectedMovieList';
 import { SearchBar } from '../SearchBar/SearchBar';
 import MovieResults from '../MovieSearchBarResults/MovieResults';
 import ErrorBoundaryButton from '../ErrorBoundary/ErrorBoundaryButton';
 import Pagination from '../Pagination/Pagination';
-import { searchMoviesByTitle } from '../../api/movieApi';
-import type { Movie } from '../../types/movieTypes';
-import useLocalStorage from '../../hooks/uselocalStorage';
-import { Outlet, useSearchParams } from 'react-router-dom';
-import SelectedMovieList from '../../store/SelectedMovieList';
 
 export function MovieContainer() {
+  const dispatch = useAppDispatch();
   const { getLocalStorage, setLocalStorage } = useLocalStorage('searchTerm');
   const [searchParams, setSearchParams] = useSearchParams();
   const pageFromUrl = Number(searchParams.get('page')) || 1;
   const currentPage = pageFromUrl > 0 ? pageFromUrl : 1;
-  const [term, setTerm] = useState(() => getLocalStorage());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const selectedMovieId = searchParams.get('details');
 
-  const beginFetchReset = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    setAllMovies([]);
-  }, []);
-
-  const failFetch = useCallback((error: unknown) => {
-    const message =
-      error instanceof Error ? error.message : 'Unknown error occurred';
-    setError(message);
-    setLoading(false);
-  }, []);
-
-  const loadMovies = useCallback(
-    async (query: string, page = 1) => {
-      beginFetchReset();
-
-      try {
-        const movies = await searchMoviesByTitle(query, page);
-        setAllMovies(movies);
-        setLoading(false);
-      } catch (error: unknown) {
-        failFetch(error);
-      }
-    },
-    [beginFetchReset, failFetch]
+  const [term, setTerm] = useState(() => getLocalStorage());
+  const [searchQuery, setSearchQuery] = useState(() =>
+    getLocalStorage().trim().toLowerCase()
   );
 
-  useEffect(() => {
-    let cancelled = false;
+  const trimmedQuery = searchQuery.trim();
+  const trending = useGetTrendingMoviesQuery(
+    { page: currentPage },
+    { skip: Boolean(trimmedQuery) }
+  );
+  const search = useSearchMoviesQuery(
+    { title: trimmedQuery, page: currentPage },
+    { skip: !trimmedQuery }
+  );
 
-    async function loadInitialData() {
-      const savedTerm = getLocalStorage();
-      const trimmed = savedTerm.trim();
-      setLoading(true);
-      setError(null);
-      setAllMovies([]);
-      try {
-        const movies = await searchMoviesByTitle(trimmed, currentPage);
-
-        if (!cancelled) {
-          setAllMovies(movies);
-        }
-      } catch (error: unknown) {
-        if (!cancelled) {
-          failFetch(error);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadInitialData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentPage, failFetch, getLocalStorage]);
+  const { data, isLoading, isFetching, error, refetch } = trimmedQuery
+    ? search
+    : trending;
+  const loading = isLoading || isFetching;
+  const allMovies = loading ? [] : (data ?? []);
+  const errorMessage = getRtkQueryErrorMessage(error);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTerm(e.target.value);
@@ -89,16 +52,30 @@ export function MovieContainer() {
   const handleSearch = () => {
     const trimmed = term.trim().toLowerCase();
     const persisted = getLocalStorage();
+
     if (trimmed === persisted && currentPage === 1) {
       return;
     }
+
     setLocalStorage(trimmed);
-    if (currentPage === 1) {
-      loadMovies(trimmed, 1);
-    } else {
+    setSearchQuery(trimmed);
+
+    if (currentPage !== 1) {
       setSearchParams({ page: '1' });
     }
   };
+
+  const handleRefresh = () => {
+    const listTag = trimmedQuery
+      ? `SEARCH:${trimmedQuery}:${currentPage}`
+      : 'TRENDING';
+
+    dispatch(
+      movieApi.util.invalidateTags([{ type: 'MovieList', id: listTag }])
+    );
+    void refetch();
+  };
+
   const closeDetailsPanel = () => {
     if (!selectedMovieId) {
       return;
@@ -120,17 +97,19 @@ export function MovieContainer() {
           value={term}
           onChange={handleChange}
           onSearch={handleSearch}
+          onRefresh={handleRefresh}
+          refreshing={isFetching}
         />
       </section>
       <div className="relative" onClick={closeDetailsPanel}>
         <MovieResults
           loading={loading}
-          error={error}
+          error={errorMessage}
           currentMovie={null}
           allMovies={allMovies}
         />
 
-        {!loading && !error && allMovies.length > 0 && (
+        {!loading && !errorMessage && allMovies.length > 0 && (
           <Pagination
             currentPage={currentPage}
             onPageChange={handlePageChange}

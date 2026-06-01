@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { Movie } from '../types/movieTypes';
+import type { RootState } from './store';
 
 interface SelectedMoviesState {
   selected: Movie[];
@@ -73,5 +74,8 @@ export const {
 } = selectedMoviesSlice.actions;
 
 export const { selectSelectedMovies, selectSelectedMovieIds } =
-  selectedMoviesSlice.selectors;
+  selectedMoviesSlice.getSelectors(
+    (state: RootState) => state.selectedMovies
+  );
+
 export default selectedMoviesSlice.reducer;

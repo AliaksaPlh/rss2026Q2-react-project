@@ -1,16 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { searchMoviesByTitle } from '../../api/movieApi';
+import { createFetchResponse, createDeferredFetchResponse } from '../../test-utils/apiMocks';
+import { moviesListJson, requestUrl, stubTmdbFetch } from '../../test-utils/tmdbFetchStub';
 import { batmanMock, supermanMock } from '../../test-utils/testData';
 import { fireEvent, render, screen, waitFor } from '../../test-utils/render';
 import MovieContainer from './MovieContainer';
-
-vi.mock('../../api/movieApi', () => ({
-  searchMoviesByTitle: vi.fn(),
-  fetchMovieById: vi.fn(),
-}));
-
-const mockedSearchMoviesByTitle = vi.mocked(searchMoviesByTitle);
 
 function renderMovieContainer(initialEntry = '/movies?page=1') {
   return render(
@@ -26,27 +20,34 @@ describe('MovieContainer', () => {
     localStorage.clear();
   });
 
-  it('shows loading indicator while movies are loading', async () => {
-    let resolveRequest: (value: typeof batmanMock[]) => void;
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
 
-    mockedSearchMoviesByTitle.mockReturnValue(
-      new Promise((resolve) => {
-        resolveRequest = resolve;
-      })
+  it('shows loading indicator while movies are loading', async () => {
+    let resolveJson: (value: unknown) => void;
+    const jsonPromise = new Promise<unknown>((resolve) => {
+      resolveJson = resolve;
+    });
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(createDeferredFetchResponse(jsonPromise))
     );
+
     renderMovieContainer();
 
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
 
-    resolveRequest!([batmanMock]);
+    resolveJson!(moviesListJson([batmanMock]));
 
     expect(await screen.findByText(/batman begins/i)).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('loads and displays a movie list on initial render', async () => {
-    mockedSearchMoviesByTitle.mockResolvedValue([batmanMock, supermanMock]);
+    stubTmdbFetch({ trending: [batmanMock, supermanMock] });
 
     renderMovieContainer();
 
@@ -58,11 +59,39 @@ describe('MovieContainer', () => {
     expect(
       screen.getByRole('navigation', { name: /pagination/i })
     ).toBeInTheDocument();
-    expect(mockedSearchMoviesByTitle).toHaveBeenCalledWith('', 1);
+  });
+
+  it('reuses cached movie list data between navigations', async () => {
+    const fetchMock = stubTmdbFetch({ trending: [batmanMock] });
+    const firstRender = renderMovieContainer();
+
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    const callsAfterFirstLoad = fetchMock.mock.calls.length;
+
+    firstRender.unmount();
+    renderMovieContainer();
+
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    expect(fetchMock.mock.calls.length).toBe(callsAfterFirstLoad);
+  });
+
+  it('refreshes movie list data when Refresh is clicked', async () => {
+    const fetchMock = stubTmdbFetch({ trending: [batmanMock] });
+
+    renderMovieContainer();
+
+    expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
+    const callsAfterFirstLoad = fetchMock.mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: /refresh/i }));
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAfterFirstLoad);
+    });
   });
 
   it('updates input value when user types', async () => {
-    mockedSearchMoviesByTitle.mockResolvedValue([supermanMock]);
+    stubTmdbFetch({ trending: [supermanMock] });
     renderMovieContainer();
 
     await screen.findByText('Superman');
@@ -76,9 +105,10 @@ describe('MovieContainer', () => {
   });
 
   it('searches by title and displays matching movies', async () => {
-    mockedSearchMoviesByTitle
-      .mockResolvedValueOnce([supermanMock])
-      .mockResolvedValueOnce([batmanMock]);
+    stubTmdbFetch({
+      trending: [supermanMock],
+      search: [batmanMock],
+    });
 
     renderMovieContainer();
 
@@ -90,23 +120,21 @@ describe('MovieContainer', () => {
     fireEvent.click(screen.getByRole('button', { name: /search/i }));
 
     expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
-    expect(mockedSearchMoviesByTitle).toHaveBeenLastCalledWith('batman', 1);
   });
 
   it('shows empty input and loads trending movies when no saved term exists', async () => {
-    mockedSearchMoviesByTitle.mockResolvedValue([batmanMock]);
+    stubTmdbFetch({ trending: [batmanMock] });
 
     renderMovieContainer();
 
     expect(await screen.findByText('Batman Begins')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/search movie/i)).toHaveValue('');
-    expect(mockedSearchMoviesByTitle).toHaveBeenCalledWith('', 1);
   });
 
   it('shows an error message when the API request fails', async () => {
-    mockedSearchMoviesByTitle.mockRejectedValue(
-      new Error('Failed to fetch movies')
-    );
+    stubTmdbFetch({
+      reject: new Error('Failed to fetch movies'),
+    });
 
     renderMovieContainer();
 
@@ -116,18 +144,32 @@ describe('MovieContainer', () => {
   });
 
   it('loads the next page when the user clicks Next', async () => {
-    mockedSearchMoviesByTitle
-      .mockResolvedValueOnce([batmanMock])
-      .mockResolvedValueOnce([supermanMock]);
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = requestUrl(input);
+      if (url.includes('/trending/movie')) {
+        const match = url.match(/page=(\d+)/);
+        const page = match ? Number(match[1]) : 1;
+        const movies = page === 1 ? [batmanMock] : [supermanMock];
+        return createFetchResponse({ jsonData: moviesListJson(movies) });
+      }
+      return createFetchResponse({ ok: false, status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     renderMovieContainer();
 
     await screen.findByText('Batman Begins');
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
 
-    await waitFor(() => {
-      expect(mockedSearchMoviesByTitle).toHaveBeenLastCalledWith('', 2);
-    });
     expect(await screen.findByText('Superman')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+      const trendingCalls = fetchMock.mock.calls.filter((c) =>
+        requestUrl(c[0] as RequestInfo | URL).includes('/trending/movie')
+      );
+      expect(trendingCalls.some((c) => requestUrl(c[0] as RequestInfo | URL).includes('page=2'))).toBe(
+        true
+      );
+    });
   });
 });

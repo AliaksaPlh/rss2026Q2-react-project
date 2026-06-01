@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { fetchMovieById } from '../../api/movieApi';
-import type { Movie } from '../../types/movieTypes';
+import {
+  useGetMovieByIdQuery,
+  getRtkQueryErrorMessage,
+} from '../../api/rtk/movieApi';
 import Loader from '../Loader/Loader';
 import { MovieDetailCard } from './MovieDetailCard';
 import Button from '../ui/Button/Button';
@@ -10,47 +11,15 @@ export function MovieDetailsPanel() {
   const [searchParams, setSearchParams] = useSearchParams();
   const movieId = searchParams.get('details');
 
-  const [movie, setMovie] = useState<Movie | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: movie,
+    isLoading,
+    error,
+  } = useGetMovieByIdQuery(movieId ?? '', {
+    skip: !movieId,
+  });
 
-  useEffect(() => {
-    if (movieId === null || movieId === '') {
-      return;
-    }
-
-    const selectedMovieId: string = movieId;
-    let cancelled = false;
-
-    async function loadMovieDetails() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const data = await fetchMovieById(selectedMovieId);
-
-        if (!cancelled) {
-          setMovie(data);
-        }
-      } catch (error: unknown) {
-        if (!cancelled) {
-          setError(
-            error instanceof Error ? error.message : 'Unknown error occurred'
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadMovieDetails();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [movieId]);
+  const errorMessage = getRtkQueryErrorMessage(error);
 
   const handleClose = () => {
     const nextParams = new URLSearchParams(searchParams);
@@ -68,11 +37,17 @@ export function MovieDetailsPanel() {
         Close
       </Button>
 
-      {loading && <Loader />}
+      {isLoading && <Loader />}
 
-      {error && <p className="text-sm font-semibold text-rose-300">{error}</p>}
+      {errorMessage && (
+        <p role="alert" className="text-sm font-semibold text-rose-300">
+          {errorMessage}
+        </p>
+      )}
 
-      {!loading && !error && movie && <MovieDetailCard movie={movie} />}
+      {!isLoading && !errorMessage && movie && (
+        <MovieDetailCard movie={movie} />
+      )}
     </div>
   );
 }

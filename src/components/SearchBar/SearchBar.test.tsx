@@ -26,4 +26,21 @@ describe('SearchBar', () => {
 
     expect(onSearch).toHaveBeenCalledTimes(1);
   });
+
+  it('calls onRefresh when Refresh button is clicked', () => {
+    const onRefresh = vi.fn();
+
+    render(
+      <SearchBar
+        value="batman"
+        onChange={vi.fn()}
+        onSearch={vi.fn()}
+        onRefresh={onRefresh}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /refresh/i }));
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
 });
