@@ -61,7 +61,7 @@ const transformListError = (
 
 /**
  * TMDB via RTK Query: tag-based cache (`Movie`, `MovieList`), TTL from .env, refetch on focus/reconnect
- * Cache is invalidated on new search and when closing details
+ * Cached data is reused between navigations
  */
 export const movieApi = createApi({
   reducerPath: 'movieApi',

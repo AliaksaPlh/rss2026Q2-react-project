@@ -2,12 +2,10 @@ import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Outlet, useSearchParams } from 'react-router-dom';
 import {
-  movieApi,
   useGetTrendingMoviesQuery,
   useSearchMoviesQuery,
   getRtkQueryErrorMessage,
 } from '../../api/rtk/movieApi';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
 import useLocalStorage from '../../hooks/uselocalStorage';
 import SelectedMovieList from '../../store/SelectedMovieList';
 import { SearchBar } from '../SearchBar/SearchBar';
@@ -16,7 +14,6 @@ import ErrorBoundaryButton from '../ErrorBoundary/ErrorBoundaryButton';
 import Pagination from '../Pagination/Pagination';
 
 export function MovieContainer() {
-  const dispatch = useAppDispatch();
   const { getLocalStorage, setLocalStorage } = useLocalStorage('searchTerm');
   const [searchParams, setSearchParams] = useSearchParams();
   const pageFromUrl = Number(searchParams.get('page')) || 1;
@@ -57,7 +54,6 @@ export function MovieContainer() {
 
     setLocalStorage(trimmed);
     setSearchQuery(trimmed);
-    dispatch(movieApi.util.invalidateTags(['MovieList']));
 
     if (currentPage !== 1) {
       setSearchParams({ page: '1' });
