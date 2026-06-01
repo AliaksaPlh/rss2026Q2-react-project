@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { MovieDetailsPanel } from './MovieDetailsPanel';
 import { createDeferredFetchResponse } from '../../test-utils/apiMocks';
 import { batmanMock } from '../../test-utils/testData';
-import { stubTmdbFetch } from '../../test-utils/tmdbFetchStub';
+import { requestUrl, stubTmdbFetch } from '../../test-utils/tmdbFetchStub';
 
 function LocationProbe() {
   const location = useLocation();
@@ -79,6 +79,25 @@ describe('MovieDetailsPanel', () => {
     expect(screen.getByText(/bruce wayne becomes batman/i)).toBeInTheDocument();
     expect(screen.getByText('2005-06-15')).toBeInTheDocument();
     expect(screen.getByText('8.2')).toBeInTheDocument();
+  });
+
+  it('reuses cached movie details between navigations', async () => {
+    const fetchMock = stubTmdbFetch({ detail: batmanMock });
+    const firstRender = renderMovieDetailsPanel('/movies?page=2&details=123');
+
+    expect(await screen.findByText(/batman begins/i)).toBeInTheDocument();
+    const detailCallsAfterFirstLoad = fetchMock.mock.calls.filter((call) =>
+      requestUrl(call[0] as RequestInfo | URL).includes('/3/movie/123')
+    ).length;
+
+    firstRender.unmount();
+    renderMovieDetailsPanel('/movies?page=2&details=123');
+
+    expect(await screen.findByText(/batman begins/i)).toBeInTheDocument();
+    const detailCallsAfterSecondLoad = fetchMock.mock.calls.filter((call) =>
+      requestUrl(call[0] as RequestInfo | URL).includes('/3/movie/123')
+    ).length;
+    expect(detailCallsAfterSecondLoad).toBe(detailCallsAfterFirstLoad);
   });
 
   it('renders an error message when details request fails', async () => {

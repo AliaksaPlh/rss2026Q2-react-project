@@ -11,7 +11,11 @@ export function MovieDetailsPanel() {
   const [searchParams, setSearchParams] = useSearchParams();
   const movieId = searchParams.get('details');
 
-  const { data: movie, isLoading, error } = useGetMovieByIdQuery(movieId ?? '', {
+  const {
+    data: movie,
+    isLoading,
+    error,
+  } = useGetMovieByIdQuery(movieId ?? '', {
     skip: !movieId,
   });
 
@@ -36,10 +40,14 @@ export function MovieDetailsPanel() {
       {isLoading && <Loader />}
 
       {errorMessage && (
-        <p className="text-sm font-semibold text-rose-300">{errorMessage}</p>
+        <p role="alert" className="text-sm font-semibold text-rose-300">
+          {errorMessage}
+        </p>
       )}
 
-      {!isLoading && !errorMessage && movie && <MovieDetailCard movie={movie} />}
+      {!isLoading && !errorMessage && movie && (
+        <MovieDetailCard movie={movie} />
+      )}
     </div>
   );
 }
