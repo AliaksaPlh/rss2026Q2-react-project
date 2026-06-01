@@ -1,19 +1,18 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from './test-utils/render';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
-import { searchMoviesByTitle } from './api/movieApi';
 import { batmanMock } from './test-utils/testData';
 import { ThemeProvider } from './Context/ThemeProvider';
-
-vi.mock('./api/movieApi', () => ({
-  searchMoviesByTitle: vi.fn(),
-  fetchMovieById: vi.fn(),
-}));
+import { stubTmdbFetch } from './test-utils/tmdbFetchStub';
 
 describe('App', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('renders application layout with search and initial content area', async () => {
-    vi.mocked(searchMoviesByTitle).mockResolvedValue([batmanMock]);
+    stubTmdbFetch({ trending: [batmanMock] });
 
     render(
       <ThemeProvider>

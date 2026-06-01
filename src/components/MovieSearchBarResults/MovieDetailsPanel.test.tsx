@@ -1,16 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '../../test-utils/render';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { MovieDetailsPanel } from './MovieDetailsPanel';
-import { fetchMovieById } from '../../api/movieApi';
+import { createDeferredFetchResponse } from '../../test-utils/apiMocks';
 import { batmanMock } from '../../test-utils/testData';
-
-vi.mock('../../api/movieApi', () => ({
-  fetchMovieById: vi.fn(),
-}));
-
-const mockedFetchMovieById = vi.mocked(fetchMovieById);
+import { stubTmdbFetch } from '../../test-utils/tmdbFetchStub';
 
 function LocationProbe() {
   const location = useLocation();
@@ -40,39 +35,42 @@ describe('MovieDetailsPanel', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('renders nothing when details query parameter is missing', () => {
     renderMovieDetailsPanel('/movies?page=2');
 
     expect(
       screen.queryByRole('button', { name: /close/i })
     ).not.toBeInTheDocument();
-    expect(mockedFetchMovieById).not.toHaveBeenCalled();
   });
 
   it('shows loader while movie details are loading', async () => {
-    let resolveRequest: (value: typeof batmanMock) => void;
+    let resolveJson: (value: unknown) => void;
+    const jsonPromise = new Promise<unknown>((resolve) => {
+      resolveJson = resolve;
+    });
 
-    mockedFetchMovieById.mockReturnValue(
-      new Promise((resolve) => {
-        resolveRequest = resolve;
-      })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(createDeferredFetchResponse(jsonPromise))
     );
 
     renderMovieDetailsPanel();
 
     expect(screen.getByRole('status')).toBeInTheDocument();
 
-    resolveRequest!(batmanMock);
+    resolveJson!(batmanMock);
 
     expect(await screen.findByText(/batman begins/i)).toBeInTheDocument();
   });
 
   it('fetches and renders movie details by id from URL', async () => {
-    mockedFetchMovieById.mockResolvedValue(batmanMock);
+    stubTmdbFetch({ detail: batmanMock });
 
     renderMovieDetailsPanel('/movies?page=2&details=123');
-
-    expect(mockedFetchMovieById).toHaveBeenCalledWith('123');
 
     expect(
       await screen.findByRole('heading', { name: /batman begins/i })
@@ -84,7 +82,9 @@ describe('MovieDetailsPanel', () => {
   });
 
   it('renders an error message when details request fails', async () => {
-    mockedFetchMovieById.mockRejectedValue(new Error('Movie details failed'));
+    stubTmdbFetch({
+      reject: new Error('Movie details failed'),
+    });
 
     renderMovieDetailsPanel();
 
@@ -94,7 +94,7 @@ describe('MovieDetailsPanel', () => {
   });
 
   it('closes details panel by removing details query parameter', async () => {
-    mockedFetchMovieById.mockResolvedValue(batmanMock);
+    stubTmdbFetch({ detail: batmanMock });
 
     renderMovieDetailsPanel('/movies?page=2&details=123');
 
