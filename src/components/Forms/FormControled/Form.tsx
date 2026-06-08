@@ -129,7 +129,9 @@ export default function Form({ onClose }: FormProps) {
           </option>
         ))}
       </datalist>
-      {errors.country && <p className={styles.error}>{errors.country.message}</p>}
+      {errors.country && (
+        <p className={styles.error}>{errors.country.message}</p>
+      )}
       <input
         type="submit"
         data-testid="submit"
