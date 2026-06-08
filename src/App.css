@@ -1,0 +1,204 @@
+.appShell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  padding: 72px 40px;
+  overflow: hidden;
+}
+
+.appShell::before,
+.appShell::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 360px;
+  height: 360px;
+  border-radius: 999px;
+  filter: blur(10px);
+  opacity: 0.35;
+}
+
+.appShell::before {
+  top: -120px;
+  left: -120px;
+  background: radial-gradient(circle, #f792b5 0%, transparent 68%);
+}
+
+.appShell::after {
+  right: -140px;
+  bottom: -120px;
+  /* background: radial-gradient(circle, #aa3bff 0%, transparent 70%); */
+}
+
+.heroSection {
+  width: min(820px, 100%);
+  margin: 0 auto 44px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 7px 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.heroSection h1 {
+  margin: 0;
+  color: var(--text-h);
+  font-size: clamp(44px, 8vw, 82px);
+  line-height: 0.95;
+  letter-spacing: -0.07em;
+}
+
+.heroText {
+  max-width: 640px;
+  margin: 24px auto 0;
+  color: var(--text);
+  font-size: clamp(17px, 2vw, 21px);
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.infoCard {
+  position: relative;
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 32px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  border-radius: 28px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.88),
+      rgba(255, 255, 255, 0.52)
+    ),
+    var(--social-bg);
+  box-shadow: 0 22px 60px rgba(8, 6, 13, 0.12);
+  text-align: left;
+}
+
+.infoCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(247, 146, 181, 0.18),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.accentCard::before {
+  background: linear-gradient(135deg, rgba(170, 59, 255, 0.2), transparent 56%);
+}
+
+.cardBadge {
+  position: relative;
+  display: inline-flex;
+  margin-bottom: 28px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.infoCard h2 {
+  position: relative;
+  margin: 0;
+  color: var(--text-h);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.infoCard p {
+  position: relative;
+  margin: 14px 0 28px;
+  color: var(--text);
+}
+
+.formButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: auto;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #e83174, #aa3bff);
+  box-shadow: 0 14px 28px rgba(170, 59, 255, 0.22);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.formButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(170, 59, 255, 0.3);
+}
+
+.formButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.formButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.profileSection {
+  width: min(720px, 100%);
+  margin: 28px auto 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .infoCard {
+    background:
+      linear-gradient(145deg, rgba(31, 32, 40, 0.92), rgba(31, 32, 40, 0.58)),
+      var(--social-bg);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    padding: 48px 18px;
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .infoCard {
+    min-height: auto;
+    padding: 26px;
+  }
+}
