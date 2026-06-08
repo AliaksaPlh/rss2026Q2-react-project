@@ -1,5 +1,4 @@
 
-
 import './App.css'
 
 function App() {
@@ -23,7 +22,7 @@ function App() {
           <h2>Connect with me</h2>
           <ul>
             <li>
-              <a href="https://github.com/AliaksaPlh" target="_blank">
+              {/* <a href="https://github.com/AliaksaPlh" target="_blank"> */}
                 <svg
                   className="button-icon"
                   role="presentation"
@@ -32,7 +31,7 @@ function App() {
                   <use href="/icons.svg#github-icon"></use>
                 </svg>
                 GitHub
-              </a>
+              {/* </a> */}
             </li>
             <li>
               <a href="comming" target="_blank">
