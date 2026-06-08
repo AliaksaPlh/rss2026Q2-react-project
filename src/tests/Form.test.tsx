@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import Form from '../components/Forms/FormControled/Form';
 import { Provider } from 'react-redux';
@@ -78,11 +78,42 @@ describe('Form', () => {
     const checkPasswordInput = screen.getByTestId(/checkPsw/i);
     const submitButton = screen.getByTestId('submit');
 
-    fireEvent.change(passwordInput, { target: { value: 'abcABC1!' } });
-    fireEvent.change(checkPasswordInput, { target: { value: 'abcABC2@' } });
+    fireEvent.change(passwordInput, { target: { value: 'abcABC123456!' } });
+    fireEvent.change(checkPasswordInput, {
+      target: { value: 'abcABC123457!' },
+    });
     await waitFor(() => {
       expect(submitButton).toBeDisabled();
     });
+  });
+  it('shows password strength rules and updates them while typing', async () => {
+    renderWithProvider(<Form />);
+
+    expect(screen.getByLabelText(/password strength/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 number/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 uppercase/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 lowercase/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 special character/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('password'), {
+      target: { value: 'Abcdef123456!' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Met')).toHaveLength(4);
+    });
+  });
+
+  it('renders country autocomplete options from the store', () => {
+    renderWithProvider(<Form />);
+
+    expect(screen.getByTestId('country')).toHaveAttribute(
+      'list',
+      'controlled-country-options'
+    );
+    expect(
+      document.querySelector('#controlled-country-options option[value="BY"]')
+    ).toHaveTextContent('Belarus');
   });
 
   it('validation photo: submit button is disabled when photo is invalid', async () => {
@@ -101,6 +132,37 @@ describe('Form', () => {
     });
   });
 
+  it('keeps submit disabled when image type is unsupported', async () => {
+    renderWithProvider(<Form />);
+
+    fireEvent.change(screen.getByTestId('photo'), {
+      target: {
+        files: [new File(['photo'], 'photo.gif', { type: 'image/gif' })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('submit')).toBeDisabled();
+    });
+  });
+
+  it('keeps submit disabled when image is larger than 2MB', async () => {
+    renderWithProvider(<Form />);
+    const largeFile = new File([new Uint8Array(2_000_001)], 'photo.png', {
+      type: 'image/png',
+    });
+
+    fireEvent.change(screen.getByTestId('photo'), {
+      target: {
+        files: [largeFile],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('submit')).toBeDisabled();
+    });
+  });
+
   it('validation terms: submit button is disabled when terms are not accepted', async () => {
     renderWithProvider(<Form />);
 
@@ -112,12 +174,24 @@ describe('Form', () => {
       expect(submitButton).toBeDisabled();
     });
   });
+  it('disables submit when country does not exist in countries list', async () => {
+    renderWithProvider(<Form />);
 
+    fireEvent.change(screen.getByTestId('country'), {
+      target: { value: 'INVALID' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('submit')).toBeDisabled();
+      expect(screen.getByText(/select a country/i)).toBeInTheDocument();
+    });
+  });
   it('validation submit button is enabled when validation is successful', async () => {
     renderWithProvider(<Form />);
     const nameInput = screen.getByTestId('name');
     const ageInput = screen.getByTestId('age');
     const emailInput = screen.getByTestId('email');
+    const genderInput = screen.getByTestId('gender');
     const passwordInput = screen.getByTestId('password');
     const checkPasswordInput = screen.getByTestId('checkPsw');
     const termsInput = screen.getByTestId('terms');
@@ -127,9 +201,12 @@ describe('Form', () => {
     fireEvent.change(nameInput, { target: { value: 'Alex' } });
     fireEvent.change(ageInput, { target: { value: '25' } });
     fireEvent.change(emailInput, { target: { value: 'alex@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'abcABC1!' } });
-    fireEvent.change(checkPasswordInput, { target: { value: 'abcABC1!' } });
-    fireEvent.change(termsInput, { target: { checked: true } });
+    fireEvent.change(genderInput, { target: { value: 'female' } });
+    fireEvent.change(passwordInput, { target: { value: 'abcABC123456!' } });
+    fireEvent.change(checkPasswordInput, {
+      target: { value: 'abcABC123456!' },
+    });
+    fireEvent.click(termsInput);
     fireEvent.change(photoInput, {
       target: {
         files: [new File(['photo'], 'photo.png', { type: 'image/png' })],
@@ -151,6 +228,49 @@ describe('Form', () => {
         screen.queryByText(/you must accept Terms and Conditions agreement/i)
       ).not.toBeInTheDocument();
       expect(screen.queryByText(/Photo is required/i)).not.toBeInTheDocument();
+      expect(screen.getByTestId('submit')).toBeEnabled();
+    });
+  });
+
+  it('submits valid data and calls onClose', async () => {
+    const onClose = vi.fn();
+
+    renderWithProvider(<Form onClose={onClose} />);
+
+    fireEvent.change(screen.getByTestId('name'), {
+      target: { value: 'Alex' },
+    });
+    fireEvent.change(screen.getByTestId('age'), { target: { value: '25' } });
+    fireEvent.change(screen.getByTestId('email'), {
+      target: { value: 'alex@example.com' },
+    });
+    fireEvent.change(screen.getByTestId('gender'), {
+      target: { value: 'female' },
+    });
+    fireEvent.change(screen.getByTestId('password'), {
+      target: { value: 'abcABC123456!' },
+    });
+    fireEvent.change(screen.getByTestId('checkPsw'), {
+      target: { value: 'abcABC123456!' },
+    });
+    fireEvent.change(screen.getByTestId('photo'), {
+      target: {
+        files: [new File(['photo'], 'photo.png', { type: 'image/png' })],
+      },
+    });
+    fireEvent.click(screen.getByTestId('terms'));
+    fireEvent.change(screen.getByTestId('country'), {
+      target: { value: 'BY' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('submit')).toBeEnabled();
+    });
+
+    fireEvent.click(screen.getByTestId('submit'));
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
     });
   });
 });
