@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { schema, type FormDataFields } from '../../../validation/validation';
 import { setFormData } from '../../store/slice';
-import { type AppDispatch } from '../../store/store';
-import { countries } from '../../../utils/consts';
+import { type AppDispatch, type RootState } from '../../store/store';
 import { toBase64 } from '../../../utils/helpers';
 import styles from '../Form.module.css';
+import PasswordStrengthIndicator from '../PasswordStrengthIndicator';
 
 type FormProps = {
   onClose?: () => void;
@@ -13,6 +13,8 @@ type FormProps = {
 
 export default function FormUncontrolled({ onClose }: FormProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const countries = useSelector((state: RootState) => state.form.countries);
+  const [passwordValue, setPasswordValue] = useState('');
 
   const formRefs = useRef<
     Record<string, HTMLInputElement | HTMLSelectElement | null>
@@ -125,10 +127,14 @@ export default function FormUncontrolled({ onClose }: FormProps) {
         type="password"
         data-testid="password"
         placeholder="min 12 (uppercase, lowercase digit, special char)"
+        onChange={(event) => {
+          setPasswordValue(event.target.value);
+        }}
         ref={(el) => {
           formRefs.current.password = el;
         }}
       />
+      <PasswordStrengthIndicator password={passwordValue} />
       {errors.password && <p className={styles.error}>{errors.password}</p>}
 
       <label htmlFor="checkPassword">Check Password:</label>
@@ -171,20 +177,23 @@ export default function FormUncontrolled({ onClose }: FormProps) {
       )}
 
       <label htmlFor="country">Country:</label>
-      <select
+      <input
         id="country"
+        type="text"
+        list="uncontrolled-country-options"
         data-testid="country"
+        placeholder="Start typing country code (e.g. BY)"
         ref={(el) => {
           formRefs.current.country = el;
         }}
-      >
-        <option>Select country</option>
+      />
+      <datalist id="uncontrolled-country-options">
         {countries.map((country) => (
           <option key={country.code} value={country.code}>
             {country.name}
           </option>
         ))}
-      </select>
+      </datalist>
       {errors.country && <p className={styles.error}>{errors.country}</p>}
 
       <input type="submit" value="Submit" data-testid="submit" />

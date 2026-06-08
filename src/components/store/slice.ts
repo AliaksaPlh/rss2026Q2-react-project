@@ -1,8 +1,10 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { User } from '../../utils/types';
+import { countries as countryList } from '../../utils/consts';
 
 type FormState = User & {
   submissions: User[];
+  countries: typeof countryList;
 };
 
 const emptyUser: User = {
@@ -18,6 +20,7 @@ const emptyUser: User = {
 const initialState: FormState = {
   ...emptyUser,
   submissions: [],
+  countries: countryList,
 };
 
 const formSlice = createSlice({

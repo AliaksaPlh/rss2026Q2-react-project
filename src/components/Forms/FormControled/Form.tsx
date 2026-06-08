@@ -1,12 +1,12 @@
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import styles from '../Form.module.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { schema, type FormDataFields } from '../../../validation/validation';
-import { countries } from '../../../utils/consts';
-import { useDispatch } from 'react-redux';
-import { type AppDispatch } from '../../store/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { type AppDispatch, type RootState } from '../../store/store';
 import { setFormData } from '../../store/slice';
 import { toBase64 } from '../../../utils/helpers';
+import PasswordStrengthIndicator from '../PasswordStrengthIndicator';
 
 type FormProps = {
   onClose?: () => void;
@@ -16,6 +16,7 @@ export default function Form({ onClose }: FormProps) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isValid },
   } = useForm<FormDataFields>({
     resolver: zodResolver(schema),
@@ -30,6 +31,8 @@ export default function Form({ onClose }: FormProps) {
     },
   });
   const dispatch = useDispatch<AppDispatch>();
+  const countries = useSelector((state: RootState) => state.form.countries);
+  const passwordValue = useWatch({ control, name: 'password' }) ?? '';
 
   const onSubmit: SubmitHandler<FormDataFields> = async (data) => {
     if (data.photo && data.photo[0]) {
@@ -84,6 +87,7 @@ export default function Form({ onClose }: FormProps) {
         {...register('password')}
         placeholder="min 12 (uppercase, lowercase digit, special char)"
       />
+      <PasswordStrengthIndicator password={passwordValue} />
       {errors.password && (
         <p className={styles.error}>{errors.password.message}</p>
       )}
@@ -111,14 +115,21 @@ export default function Form({ onClose }: FormProps) {
       <input type="checkbox" data-testid="terms" {...register('acceptTerms')} />
 
       <label>Country:</label>
-      <select data-testid="country" {...register('country')}>
-        <option>Select country</option>
+      <input
+        type="text"
+        list="controlled-country-options"
+        data-testid="country"
+        {...register('country')}
+        placeholder="Start typing country code (e.g. BY)"
+      />
+      <datalist id="controlled-country-options">
         {countries.map((country) => (
           <option key={country.code} value={country.code}>
             {country.name}
           </option>
         ))}
-      </select>
+      </datalist>
+      {errors.country && <p className={styles.error}>{errors.country.message}</p>}
       <input
         type="submit"
         data-testid="submit"
